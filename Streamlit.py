@@ -1,41 +1,46 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-import joblib
+import numpy as np
+from sklearn.linear_model import LogisticRegression
 
-# Load pre-trained models
-scaler = joblib.load('scaler.pkl')
-pca = joblib.load('pca.pkl')
-cluster_model = joblib.load('clustering_model.pkl')
+# Sample coefficients and odds ratios
+data = {
+    'Feature': [
+        'Pclass', 'Sex_male', 'Age', 'SibSp', 'Parch', 'Fare',
+        'Cabin_B', 'Title_Master', 'Title_Miss', 'Title_Mr',
+        'Title_Mrs', 'Title_Rev', 'Title_Rare',
+        'First_Letter_Cabin_A', 'First_Letter_Cabin_B', 'First_Letter_Cabin_C',
+        'First_Letter_Cabin_D', 'First_Letter_Cabin_E', 'First_Letter_Cabin_F',
+        'First_Letter_Cabin_G', 'First_Letter_Cabin_T'
+    ],
+    'Coefficient': [
+        -0.060693, -1.051405, -0.027040, -0.419895, -0.293378, 0.053657,
+        0.236501, 1.345416, 1.074084, -1.458045, 0.940368, -2.031174, 0.848491,
+        0.881867, 0.826806, 0.176881, 1.102238, 0.519373, 0.158335, -0.835780, -0.387565
+    ]
+}
 
-st.title("Customer Segmentation App")
+df = pd.DataFrame(data)
+df['Odds Ratio'] = np.exp(df['Coefficient'])
 
-# User inputs
-age = st.number_input("Age", min_value=18, max_value=100, value=30)
-income = st.number_input("Income", min_value=0, value=50000)
-mnt_wines = st.number_input("Wine Spend", min_value=0, value=100)
-mnt_fruits = st.number_input("Fruit Spend", min_value=0, value=50)
-mnt_meat = st.number_input("Meat Spend", min_value=0, value=150)
-mnt_fish = st.number_input("Fish Spend", min_value=0, value=70)
-mnt_sweets = st.number_input("Sweet Spend", min_value=0, value=30)
-mnt_gold = st.number_input("Gold Spend", min_value=0, value=20)
-kidhome = st.number_input("Number of Kids at Home", min_value=0, max_value=10, value=0)
-teenhome = st.number_input("Number of Teens at Home", min_value=0, max_value=10, value=0)
+# Streamlit UI
+st.title("Logistic Regression: Coefficients & Odds Ratios")
 
-# Feature engineering
-total_spend = mnt_wines + mnt_fruits + mnt_meat + mnt_fish + mnt_sweets + mnt_gold
-family_size = kidhome + teenhome + 1
-is_parent = 1 if (kidhome + teenhome) > 0 else 0
+st.subheader("Model Coefficients Table")
+st.dataframe(df)
 
-# Prepare input data
-input_data = pd.DataFrame([[age, income, total_spend, family_size, is_parent]],
-                          columns=['Age', 'Income', 'TotalSpend', 'FamilySize', 'IsParent'])
+st.subheader("Make a Prediction")
 
-# Scale and transform input data
-input_scaled = scaler.transform(input_data)
-input_pca = pca.transform(input_scaled)
+# Create inputs dynamically
+user_input = []
+for feature in df['Feature']:
+    value = st.number_input(f"{feature}", value=0.0)
+    user_input.append(value)
 
-# Predict cluster
-cluster_label = cluster_model.fit_predict(input_pca)[0]
-
-st.write(f"Predicted Customer Segment: **Cluster {cluster_label}**")
+# Prediction (Mock example — replace with your trained model)
+if st.button("Predict"):
+    # Dummy logistic regression setup
+    model = LogisticRegression()
+    # This assumes the model has been trained already (replace with joblib/pickle loading in real use)
+    prediction = 1 / (1 + np.exp(-np.dot(df['Coefficient'], user_input)))
+    st.success(f"Predicted Probability of Outcome: {prediction:.4f}")
