@@ -1,60 +1,41 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.cluster import AgglomerativeClustering
 import joblib
 
-# Load the models (if you save them separately, else rebuild below)
-# scaler = joblib.load("scaler.pkl")
-# pca = joblib.load("pca.pkl")
-# cluster_model = joblib.load("cluster_model.pkl")
+# Load pre-trained models
+scaler = joblib.load('scaler.pkl')
+pca = joblib.load('pca.pkl')
+cluster_model = joblib.load('clustering_model.pkl')
 
-# For this example, we'll build them again for simplicity (normally you'd reuse the trained models)
-def load_model():
-    # Simulate training process
-    # NOTE: Replace this with actual saved model for real deployment
-    # For now, using dummy data shape from training
-    scaler = StandardScaler()
-    pca = PCA(n_components=3)
-    cluster_model = AgglomerativeClustering(n_clusters=4)
+st.title("Customer Segmentation App")
 
-    return scaler, pca, cluster_model
+# User inputs
+age = st.number_input("Age", min_value=18, max_value=100, value=30)
+income = st.number_input("Income", min_value=0, value=50000)
+mnt_wines = st.number_input("Wine Spend", min_value=0, value=100)
+mnt_fruits = st.number_input("Fruit Spend", min_value=0, value=50)
+mnt_meat = st.number_input("Meat Spend", min_value=0, value=150)
+mnt_fish = st.number_input("Fish Spend", min_value=0, value=70)
+mnt_sweets = st.number_input("Sweet Spend", min_value=0, value=30)
+mnt_gold = st.number_input("Gold Spend", min_value=0, value=20)
+kidhome = st.number_input("Number of Kids at Home", min_value=0, max_value=10, value=0)
+teenhome = st.number_input("Number of Teens at Home", min_value=0, max_value=10, value=0)
 
-scaler, pca, cluster_model = load_model()
+# Feature engineering
+total_spend = mnt_wines + mnt_fruits + mnt_meat + mnt_fish + mnt_sweets + mnt_gold
+family_size = kidhome + teenhome + 1
+is_parent = 1 if (kidhome + teenhome) > 0 else 0
 
-st.title("Customer Segmentation - Cluster Prediction")
+# Prepare input data
+input_data = pd.DataFrame([[age, income, total_spend, family_size, is_parent]],
+                          columns=['Age', 'Income', 'TotalSpend', 'FamilySize', 'IsParent'])
 
-st.write("Enter customer details below:")
+# Scale and transform input data
+input_scaled = scaler.transform(input_data)
+input_pca = pca.transform(input_scaled)
 
-income = st.number_input("Income", min_value=0)
-recency = st.slider("Recency (days since last purchase)", 0, 100)
-age = st.slider("Age", 18, 100)
-spent = st.number_input("Total Amount Spent", min_value=0)
-education = st.selectbox("Education Level", ['Undergraduate', 'Graduate', 'Postgraduate'])
-living_with = st.selectbox("Living With", ['Alone', 'Partner'])
-children = st.slider("Number of Children/Teens at Home", 0, 5)
-is_parent = 1 if children > 0 else 0
-family_size = (1 if living_with == 'Alone' else 2) + children
+# Predict cluster
+cluster_label = cluster_model.fit_predict(input_pca)[0]
 
-# Encode inputs
-education_map = {'Undergraduate': 0, 'Graduate': 1, 'Postgraduate': 2}
-living_map = {'Alone': 0, 'Partner': 1}
-
-input_data = pd.DataFrame([[
-    income, recency, age, spent,
-    education_map[education],
-    living_map[living_with],
-    children, family_size, is_parent
-]], columns=[
-    'Income', 'Recency', 'Age', 'Spent',
-    'Education', 'Living_With', 'Children', 'Family_Size', 'Is_Parent'
-])
-
-# Simulate scaling and clustering (in real case, use fitted scaler, pca, and model)
-scaled = scaler.fit_transform(input_data)
-pca_data = pca.fit_transform(scaled)
-cluster = cluster_model.fit_predict(pca_data)
-
-st.success(f"The customer belongs to **Cluster {cluster[0]}**")
+st.write(f"Predicted Customer Segment: **Cluster {cluster_label}**")
