@@ -1,35 +1,30 @@
 import pandas as pd
 import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.decomposition import PCA
-from sklearn.cluster import AgglomerativeClustering
 import joblib
 
-# Load your dataset
-df = pd.read_csv('customer_data.csv')
+# Load your dataset (replace this with your actual CSV or source)
+df = pd.read_csv("your_dataset.csv")
 
-# Feature engineering (example)
-df['TotalSpend'] = df['MntWines'] + df['MntFruits'] + df['MntMeatProducts'] + df['MntFishProducts'] + df['MntSweetProducts'] + df['MntGoldProds']
-df['FamilySize'] = df['Kidhome'] + df['Teenhome'] + 1
-df['IsParent'] = np.where(df['Kidhome'] + df['Teenhome'] > 0, 1, 0)
+# Features and target — update based on your dataset
+X = df.drop("Survived", axis=1)  # Replace "Survived" with your target column
+y = df["Survived"]
 
-# Select features for clustering
-features = ['Age', 'Income', 'TotalSpend', 'FamilySize', 'IsParent']
-X = df[features]
-
-# Standardize features
+# Optional: Feature scaling (recommended for logistic regression)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Apply PCA
-pca = PCA(n_components=3)
-X_pca = pca.fit_transform(X_scaled)
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# Clustering
-cluster = AgglomerativeClustering(n_clusters=4)
-labels = cluster.fit_predict(X_pca)
+# Train the Logistic Regression model
+model = LogisticRegression()
+model.fit(X_train, y_train)
 
-# Save models
-joblib.dump(scaler, 'scaler.pkl')
-joblib.dump(pca, 'pca.pkl')
-joblib.dump(cluster, 'clustering_model.pkl')
+# Save the model and scaler
+joblib.dump(model, "logistic_model.pkl")
+joblib.dump(scaler, "scaler.pkl")
+
+print("Model and scaler saved successfully!")
