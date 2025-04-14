@@ -1,30 +1,40 @@
+
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.cluster import KMeans, DBSCAN
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
 import joblib
 
-# Load your dataset (replace this with your actual CSV or source)
-df = pd.read_csv("your_dataset.csv")
+# --- Load your dataset ---
+df = pd.read_csv("your_dataset.csv")  # Replace with your actual file name
 
-# Features and target — update based on your dataset
-X = df.drop("Survived", axis=1)  # Replace "Survived" with your target column
+# --- Feature + Target ---
+X = df.drop("Survived", axis=1)  # Update target name if different
 y = df["Survived"]
 
-# Optional: Feature scaling (recommended for logistic regression)
+# --- Scale features ---
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# Train/test split
-X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+# --- Train Random Forest Classifier ---
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_scaled, y)
+joblib.dump(rf, "random_forest_model.pkl")
 
-# Train the Logistic Regression model
-model = LogisticRegression()
-model.fit(X_train, y_train)
+# --- Train KMeans ---
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+kmeans.fit(X_scaled)
+joblib.dump(kmeans, "kmeans_model.pkl")
 
-# Save the model and scaler
-joblib.dump(model, "logistic_model.pkl")
+# --- Train DBSCAN ---
+dbscan = DBSCAN(eps=1.5, min_samples=5)
+dbscan.fit(X_scaled)
+joblib.dump(dbscan, "dbscan_model.pkl")
+
+# --- Save Scaler and Data for Streamlit ---
 joblib.dump(scaler, "scaler.pkl")
+df.to_csv("data_for_streamlit.csv", index=False)
 
-print("Model and scaler saved successfully!")
+print("✅ All models and data saved successfully!")
